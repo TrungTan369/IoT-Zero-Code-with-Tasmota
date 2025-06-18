@@ -1,8 +1,8 @@
 #ifndef TASK_WEBSERVER_H
 #define TASK_WEBSERVER_H
 
-#include <globals.h>
+#include "globals.h"
 
-void InitWebserver();
+void initWebserver();
 
 #endif

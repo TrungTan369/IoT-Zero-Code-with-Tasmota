@@ -3,16 +3,17 @@
 
 void setup() {
     Serial.begin(115200);
-    delay(1000);
-    Serial.println("CC");
-    initDHT20();
+    initWebserver();
     initMQTT();
-    // InitWebserver();
+    initDHT20();
+    initLight();
+    initSoil();
+    initDistance();
 }
 
 void loop() {
-    // if (!Wifi_reconnect()) {
-    //     return;
-    // }
-    //reconnectMQTT();
+    if (!Wifi_reconnect()) {
+        return;
+    }
+    reconnectMQTT();
 }

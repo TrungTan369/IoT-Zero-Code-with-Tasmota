@@ -3,7 +3,8 @@
 
 #include "globals.h"
 
-extern DHT20 dht20;
+extern float temp;
+extern float humi;
 
 void initDHT20();
 
