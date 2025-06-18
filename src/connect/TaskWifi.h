@@ -3,6 +3,6 @@
 
 #include "globals.h"
 
-extern bool Wifi_reconnect();
+bool Wifi_reconnect();
 
 #endif /* INC_TASKWIFI_H_ */

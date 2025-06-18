@@ -3,7 +3,8 @@
 
 #include "globals.h"
 
-extern void initDHT20();
-extern void getValueDHT20();
+extern DHT20 dht20;
+
+void initDHT20();
 
 #endif /* INC_TASKDHT20_H_ */
