@@ -2,7 +2,6 @@
 
 uint8_t distance;
 
-
 void TaskDistance(void *pvParameters) {
     while (1) {
         digitalWrite(trig, LOW);
@@ -10,16 +9,20 @@ void TaskDistance(void *pvParameters) {
         digitalWrite(trig, HIGH);
         vTaskDelay(pdMS_TO_TICKS(10));
         digitalWrite(trig, LOW);
-
-        long duration = pulseIn(echo, HIGH, 30000);
-        distance = duration * 0.034 / 2;
-        vTaskDelay(pdMS_TO_TICKS(500));
+        long duration = pulseIn(echo, HIGH);
+        if (duration > 0) {
+            distance = int(duration / 2 / 29.412);
+        } else {
+            distance = 0;
+        }
+        Serial.print("DISTANCE: ");
+        Serial.println(distance);
+        vTaskDelay(pdMS_TO_TICKS(3000));
     }
 }
 
 void initDistance() {
     pinMode(echo, INPUT);
     pinMode(trig, OUTPUT);
-
-    xTaskCreate(TaskDistance, "TaskDistance", 1025, NULL, 1, NULL);
+    xTaskCreate(TaskDistance, "TaskDistance", 2048, NULL, 1, NULL);
 }

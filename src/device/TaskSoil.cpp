@@ -4,11 +4,14 @@ uint8_t soil;
 
 void TaskSoil(void *pvParameters) {
     while (1) {
-        soil = analogRead(soil_pin);
-        vTaskDelay(pdMS_TO_TICKS(2000));
+        soil = (analogRead(soil_pin) / 4095.0) * 100;
+        Serial.print("SOIL: ");
+        Serial.println(soil);
+        vTaskDelay(pdMS_TO_TICKS(5000));
     }
 }
-void initSoil(){
+
+void initSoil() {
     pinMode(soil_pin, INPUT);
-    xTaskCreate(TaskSoil, "TaskSoil", 1024, NULL, 1, NULL);
+    xTaskCreate(TaskSoil, "TaskSoil", 2048, NULL, 1, NULL);
 }

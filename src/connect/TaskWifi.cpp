@@ -3,7 +3,7 @@
 constexpr char WIFI_SSID[] = "ACLAB";
 constexpr char WIFI_PASSWORD[] = "ACLAB2023";
 
-void InitWiFi() {
+void initWiFi() {
     Serial.println("Connecting to AP ...");
     WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
     while (WiFi.status() != WL_CONNECTED) {
@@ -21,6 +21,6 @@ bool Wifi_reconnect() {
     if (status == WL_CONNECTED) {
         return true;
     }
-    InitWiFi();
-    return false;
+    initWiFi();
+    return true;
 }

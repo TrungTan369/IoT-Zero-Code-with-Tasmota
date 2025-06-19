@@ -17,7 +17,7 @@ void TaskDHT20(void *pvParameters) {
         } else {
             Serial.println("Failed to read DHT20 sensor.");
         }
-        vTaskDelay(10000 / portTICK_PERIOD_MS);
+        vTaskDelay(pdMS_TO_TICKS(5000));
     }
 }
 

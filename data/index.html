@@ -2,32 +2,73 @@
 <html>
 
 <head>
+    <title>ESP32 Sensor Data</title>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ESP32 WebSocket</title>
-    <script>
-        var ws;
-        function init() {
-            ws = new WebSocket('ws://' + location.host + '/ws');
-            ws.onmessage = function (event) {
-                var data = JSON.parse(event.data);
-                document.getElementById("temp").innerText = data.temp;
-                document.getElementById("humi").innerText = data.humi;
-                document.getElementById("soil").innerText = data.soil;
-                document.getElementById("distance").innerText = data.distance;
-                document.getElementById("light").innerText = data.light;
-            };
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        body {
+            font-family: Arial;
+            text-align: center;
         }
-    </script>
+
+        h1 {
+            color: #333;
+        }
+
+        table {
+            margin: auto;
+            border-collapse: collapse;
+        }
+
+        td,
+        th {
+            border: 1px solid #ccc;
+            padding: 8px 12px;
+        }
+    </style>
 </head>
 
-<body onload="init();">
+<body>
     <h1>ESP32 Sensor Data</h1>
-    <p>Temp: <span id="temp">0</span>°C</p>
-    <p>Humidity: <span id="humi">0</span>%</p>
-    <p>Soil: <span id="soil">0</span></p>
-    <p>Distance: <span id="distance">0</span>cm</p>
-    <p>Light: <span id="light">0</span></p>
+    <table>
+        <tr>
+            <th>Sensor</th>
+            <th>Value</th>
+        </tr>
+        <tr>
+            <td>Temp</td>
+            <td id="temp">--</td>
+        </tr>
+        <tr>
+            <td>Humi</td>
+            <td id="humi">--</td>
+        </tr>
+        <tr>
+            <td>Soil</td>
+            <td id="soil">--</td>
+        </tr>
+        <tr>
+            <td>Distance</td>
+            <td id="distance">--</td>
+        </tr>
+        <tr>
+            <td>Light</td>
+            <td id="light">--</td>
+        </tr>
+    </table>
+    <script>
+        setInterval(() => {
+            fetch('/data')
+                .then(res => res.json())
+                .then(data => {
+                    document.getElementById('temp').textContent = data.temp;
+                    document.getElementById('humi').textContent = data.humi;
+                    document.getElementById('soil').textContent = data.soil;
+                    document.getElementById('distance').textContent = data.distance;
+                    document.getElementById('light').textContent = data.light;
+                });
+        }, 1000);
+    </script>
 </body>
 
 </html>
