@@ -4,13 +4,12 @@
 // include libraries
 #include <Adafruit_NeoPixel.h>
 #include <Arduino.h>
-// #include <AsyncTCP.h>  // ---
+#include <AsyncTCP.h>  // ---
 #include <DHT20.h>
-// #include <ESPAsyncWebServer.h>  //--
+#include <ESPAsyncWebServer.h>  //--
 #include <LCD_I2C.h>
 #include <PubSubClient.h>
 #include <SPIFFS.h>  // ---
-#include <WebServer.h>
 #include <WiFi.h>
 #include <Wire.h>
 #include <stdint.h>

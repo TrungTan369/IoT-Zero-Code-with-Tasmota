@@ -1,6 +1,7 @@
 #include "TaskWebserver.h"  // led_on(), led_off(), extern int led_mode
 
-WebServer server(80);
+AsyncWebServer server(80);
+AsyncWebSocket ws("/ws");
 
 String createHTML() {
     String html = R"rawliteral(
@@ -94,31 +95,48 @@ String createHTML() {
         </div>
     </div>
     <script>
-        function fetchData(){
-            fetch('/data').then(r=>r.json()).then(d=>{
+        let ws;
+        function connectWS() {
+            ws = new WebSocket('ws://' + location.hostname + '/ws');
+            ws.onopen = function() {
+                fetchData();
+            };
+            ws.onmessage = function(event) {
+                let d = JSON.parse(event.data);
                 document.getElementById('temp').innerText = d.temp;
                 document.getElementById('humi').innerText = d.humi;
                 document.getElementById('soil').innerText = d.soil;
                 document.getElementById('distance').innerText = d.distance;
                 document.getElementById('light').innerText = d.light;
-            });
+                // Cập nhật trạng thái switch nếu có d.led hoặc d.mode
+                if (typeof d.led !== 'undefined')
+                    document.getElementById('ledSwitch').checked = d.led;
+                if (typeof d.mode !== 'undefined') {
+                    document.getElementById('rgbModeSwitch').checked = d.mode;
+                    document.getElementById('colorGrid').style.display = d.mode ? 'grid' : 'none';
+                }
+            };
+            ws.onclose = function() {
+                setTimeout(connectWS, 1000);
+            };
         }
-        setInterval(fetchData,1000);
-        window.onload = fetchData;
+        function fetchData() {
+            if (ws && ws.readyState === 1) ws.send('get_data');
+        }
+        setInterval(fetchData, 1000);
+        window.onload = connectWS;
 
         function toggleLedSwitch(){
             let val = document.getElementById('ledSwitch').checked ? 1 : 0;
-            fetch('/led_switch?value=' + val);
+            if (ws && ws.readyState === 1) ws.send('led_switch:' + val);
         }
         function toggleRgbModeSwitch(){
             let val = document.getElementById('rgbModeSwitch').checked ? 1 : 0;
-            fetch('/mode_switch?value=' + val);
-            // Hiện/ẩn bảng màu
+            if (ws && ws.readyState === 1) ws.send('mode_switch:' + val);
             document.getElementById('colorGrid').style.display = val ? 'grid' : 'none';
         }
         function setColor(color){
-            fetch('/color?value=' + color);
-            // Đánh dấu màu đang chọn
+            if (ws && ws.readyState === 1) ws.send('color:' + color);
             document.querySelectorAll('.color-btn').forEach(btn => btn.classList.remove('selected'));
             let btn = Array.from(document.querySelectorAll('.color-btn')).find(b => b.title.toLowerCase() === color);
             if(btn) btn.classList.add('selected');
@@ -130,92 +148,75 @@ String createHTML() {
     return html;
 }
 
-void handleRoot() {
-    server.send(200, "text/html", createHTML());
-}
-
-void handleSensorData() {
+String getSensorJson() {
     String json = "{";
     json += "\"temp\":" + String(temp) + ",";
     json += "\"humi\":" + String(humi) + ",";
     json += "\"soil\":" + String(soil) + ",";
     json += "\"distance\":" + String(distance) + ",";
-    json += "\"light\":" + String(light);
+    json += "\"light\":" + String(light) + ",";
+    // json += "\"led\":" + String(led_is_on ? 1 : 0) + ",";
+    json += "\"mode\":" + String(led_mode ? 1 : 0);
     json += "}";
-    server.send(200, "application/json", json);
+    return json;
 }
 
-void handleLedSwitch() {
-    if (server.hasArg("value")) {
-        int val = server.arg("value").toInt();
-        if (val == 1) {
-            led_on();
-        } else {
-            led_off();
+// Xử lý sự kiện WebSocket
+void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType type, void *arg, uint8_t *data, size_t len) {
+    if (type == WS_EVT_CONNECT) {
+        // Gửi dữ liệu lần đầu khi client kết nối
+        client->text(getSensorJson());
+    } else if (type == WS_EVT_DATA) {
+        AwsFrameInfo *info = (AwsFrameInfo *)arg;
+        if (info->final && info->index == 0 && info->len == len && info->opcode == WS_TEXT) {
+            String msg = String((char *)data);
+            if (msg == "get_data") {
+                client->text(getSensorJson());
+            } else if (msg.startsWith("led_switch:")) {
+                int val = msg.substring(11).toInt();
+                if (val == 1) {
+                    led_on();
+                } else {
+                    led_off();
+                }
+                client->text(getSensorJson());
+            } else if (msg.startsWith("mode_switch:")) {
+                led_mode = msg.substring(11).toInt();
+                client->text(getSensorJson());
+            } else if (msg.startsWith("color:")) {
+                String color = msg.substring(6);
+                if (color == "red")
+                    led_color = red;
+                else if (color == "orange")
+                    led_color = orange;
+                else if (color == "yellow")
+                    led_color = yellow;
+                else if (color == "green")
+                    led_color = green;
+                else if (color == "blue")
+                    led_color = blue;
+                else if (color == "indigo")
+                    led_color = indigo;
+                else if (color == "purple")
+                    led_color = purple;
+                else if (color == "white")
+                    led_color = white;
+                else if (color == "black")
+                    led_color = black;
+            }
         }
-        server.send(200, "text/plain", "LED power switched");
-    } else {
-        server.send(400, "text/plain", "Missing value");
     }
 }
 
-void handleModeSwitch() {
-    if (server.hasArg("value")) {
-        led_mode = server.arg("value").toInt();  // led_mode từ header khác
-        server.send(200, "text/plain", "LED mode set to " + String(led_mode));
-    } else {
-        server.send(400, "text/plain", "Missing value");
-    }
-}
-
-void TaskWebServer(void *pvParameters) {
-    while (1) {
-        server.handleClient();
-        vTaskDelay(pdMS_TO_TICKS(10));
-    }
-}
-
-void handleColor() {
-    if (server.hasArg("value")) {
-        String color = server.arg("value");
-        if      (color == "red")    led_color = red;
-        else if (color == "orange") led_color = orange;
-        else if (color == "yellow") led_color = yellow;
-        else if (color == "green")  led_color = green;
-        else if (color == "blue")   led_color = blue;
-        else if (color == "indigo") led_color = indigo;
-        else if (color == "purple") led_color = purple;
-        else if (color == "white")  led_color = white;
-        else if (color == "black")  led_color = black;
-        server.send(200, "text/plain", "Color set to " + color);
-    } else {
-        server.send(400, "text/plain", "Missing value");
-    }
+void handleRoot(AsyncWebServerRequest *request) {
+    request->send(200, "text/html", createHTML());
 }
 
 void initWebserver() {
-    server.on("/", handleRoot);
-    server.on("/data", HTTP_GET, handleSensorData);
-    server.on("/color", HTTP_GET, handleColor);
-    server.on("/led/on", HTTP_GET, []() {
-        led_on();
-        server.send(200, "text/plain", "LED ON");
-    });
-    server.on("/led/off", HTTP_GET, []() {
-        led_off();
-        server.send(200, "text/plain", "LED OFF");
-    });
-    server.on("/led_switch", HTTP_GET, handleLedSwitch);
-    server.on("/mode_switch", HTTP_GET, handleModeSwitch);
+    ws.onEvent(onWsEvent);
+    server.addHandler(&ws);
+    server.on("/", HTTP_GET, handleRoot);
     server.begin();
-    Serial.println("WebServer started");
-
-    xTaskCreatePinnedToCore(
-        TaskWebServer,
-        "TaskWebServer",
-        4096,
-        NULL,
-        1,
-        NULL,
-        1);
+    Serial.println("WebServer + WebSocket started");
 }
+
