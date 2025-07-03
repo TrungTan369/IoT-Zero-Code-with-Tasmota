@@ -15,8 +15,9 @@ enum LED_COLOR {
     black
 };
 extern LED_COLOR led_color;
-extern bool led_mode;
+extern volatile bool led_mode;
 void initLed();
 void led_off();
 void led_on();
+void TaskLedBlink(void *);
 #endif

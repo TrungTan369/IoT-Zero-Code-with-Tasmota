@@ -4,6 +4,7 @@
 void setup() {
     Serial.begin(115200);
     Serial.println("Hello user");
+    LittleFS.begin();
     initWiFi();
     initWebserver();
     initMQTT();
@@ -16,9 +17,6 @@ void setup() {
     initLed();
     initLCD1602();
     initFSM();
-    if (!SPIFFS.begin(true)) {
-        Serial.println("Mount failed");
-    }
 }
 
 void loop() {

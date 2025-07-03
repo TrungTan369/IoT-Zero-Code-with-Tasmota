@@ -2,7 +2,7 @@
 
 Adafruit_NeoPixel pixels(4, led_pin, NEO_GRB + NEO_KHZ800);
 LED_COLOR led_color;
-bool led_mode = 0;  // auto
+volatile bool led_mode = 0;  // auto
 void TaskLed(void *pvParameters) {
     while (1) {
         switch (led_color) {
@@ -47,6 +47,14 @@ void TaskLed(void *pvParameters) {
         vTaskDelay(pdMS_TO_TICKS(2000));
         if (!led_mode)
             led_color = static_cast<LED_COLOR>((led_color + 1) % 9);
+    }
+}
+void TaskLedBlink(void *pvParameters) {
+    while (1) {
+        led_on();
+        vTaskDelay(pdMS_TO_TICKS(500));
+        led_off();
+        vTaskDelay(pdMS_TO_TICKS(500));
     }
 }
 void initLed() {
