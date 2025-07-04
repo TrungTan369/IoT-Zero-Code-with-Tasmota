@@ -10,10 +10,6 @@ void TaskDHT20(void *pvParameters) {
             humi = dht20.getHumidity();
             publishData("temp", String(temp));
             publishData("humi", String(humi));
-            Serial.print("temp: ");
-            Serial.print(temp);
-            Serial.print("\t humi: ");
-            Serial.println(humi);
         } else {
             Serial.println("Failed to read DHT20 sensor.");
         }
