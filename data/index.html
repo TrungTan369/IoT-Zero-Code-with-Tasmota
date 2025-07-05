@@ -189,6 +189,76 @@
         #wifiForm button:hover {
             background: #005b99;
         }
+
+        .sidebar button {
+            background: none;
+            border: none;
+            color: white;
+            padding: 15px;
+            text-align: left;
+            width: 100%;
+            cursor: pointer;
+            font-size: 16px;
+            border-left: 5px solid transparent;
+            transition: background 0.2s, border-left 0.2s, color 0.2s;
+            outline: none;
+            border-radius: 0 20px 20px 0;
+            margin-bottom: 8px;
+            letter-spacing: 0.5px;
+        }
+
+        .sidebar button:hover,
+        .sidebar button.active {
+            background: #005b99;
+            border-left: 5px solid #fff;
+            color: #ffe082;
+        }
+
+        #otaForm button {
+            padding: 12px 0;
+            width: 80%;
+            margin: 18px auto 0 auto;
+            border-radius: 18px;
+            font-size: 1.1em;
+            background: linear-gradient(90deg, #007acc 60%, #005b99 100%);
+            color: white;
+            border: none;
+            cursor: pointer;
+            display: block;
+            transition: background 0.2s, box-shadow 0.2s;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.07);
+            font-weight: bold;
+            letter-spacing: 0.5px;
+        }
+
+        #otaForm button:hover {
+            background: linear-gradient(90deg, #005b99 60%, #007acc 100%);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.13);
+        }
+
+        #otaProgressBar {
+            width: 80%;
+            height: 18px;
+            background: #eee;
+            border-radius: 9px;
+            margin: 16px auto;
+            display: none;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.07);
+            overflow: hidden;
+        }
+
+        #otaProgress {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #007acc 60%, #005b99 100%);
+            border-radius: 9px;
+            text-align: center;
+            color: white;
+            font-size: 13px;
+            line-height: 18px;
+            transition: width 0.3s;
+            font-weight: bold;
+        }
     </style>
 </head>
 
@@ -197,6 +267,7 @@
         <h2>ESP32</h2>
         <button class="active" onclick="showPage('dashboard')">Dashboard</button>
         <button onclick="showPage('wifi')">Cấu hình Wi-Fi</button>
+        <button onclick="showPage('ota')">Nạp Firmware</button>
     </div>
 
     <div class="content">
@@ -261,6 +332,21 @@
             </form>
             <p id="wifiMsg"></p>
         </div>
+
+        <div id="otaPage" style="display: none;">
+            <h1>Nạp Firmware (OTA)</h1>
+            <form id="otaForm">
+                <input type="file" name="firmware" id="firmwareFile" required style="margin-bottom:16px;">
+                <button type="submit">Nạp Firmware</button>
+                <div id="otaProgressBar"
+                    style="width:80%;height:18px;background:#eee;border-radius:9px;margin:16px auto;display:none;">
+                    <div id="otaProgress"
+                        style="height:100%;width:0%;background:#007acc;border-radius:9px;text-align:center;color:white;font-size:13px;line-height:18px;">
+                    </div>
+                </div>
+            </form>
+            <p id="otaMsg"></p>
+        </div>
     </div>
 
     <script>
@@ -313,6 +399,7 @@
         function showPage(page) {
             document.getElementById('dashboardPage').style.display = (page === 'dashboard') ? 'block' : 'none';
             document.getElementById('wifiPage').style.display = (page === 'wifi') ? 'block' : 'none';
+            document.getElementById('otaPage').style.display = (page === 'ota') ? 'block' : 'none';
             document.querySelectorAll('.sidebar button').forEach(btn => btn.classList.remove('active'));
             event.target.classList.add('active');
         }

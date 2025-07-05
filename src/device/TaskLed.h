@@ -19,5 +19,6 @@ extern volatile bool led_mode;
 void initLed();
 void led_off();
 void led_on();
-void TaskLedBlink(void *);
+void Led_Indicate_NO_WIFI(void *);
+void Led_Indicate_NO_INTERNET(void *);
 #endif

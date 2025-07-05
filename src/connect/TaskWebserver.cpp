@@ -5,11 +5,11 @@ AsyncWebSocket ws("/ws");
 
 String getSensorJson() {
     String json = "{";
-    json += "\"temp\":" + String(temp) + ",";
-    json += "\"humi\":" + String(humi) + ",";
-    json += "\"soil\":" + String(soil) + ",";
-    json += "\"distance\":" + String(distance) + ",";
-    json += "\"light\":" + String(light) + ",";
+    json += "\"temp\":" + String(10) + ",";
+    json += "\"humi\":" + String(10) + ",";
+    json += "\"soil\":" + String(10) + ",";
+    json += "\"distance\":" + String(10) + ",";
+    json += "\"light\":" + String(10) + ",";
     json += "\"mode\":" + String(led_mode ? 1 : 0);
     json += "}";
     return json;
@@ -85,10 +85,27 @@ void handleRoot(AsyncWebServerRequest *request) {
     request->send(LittleFS, "/index.html", "text/html");
 }
 
+void setupOTA(AsyncWebServer &server) {
+    server.on("/update", HTTP_POST, [](AsyncWebServerRequest *request) {
+        bool shouldReboot = !Update.hasError();
+        request->send(200, "text/html", shouldReboot ? "OK" : "FAIL");
+        if (shouldReboot) {
+            delay(1000);
+            ESP.restart();
+        } }, [](AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final) {
+        if (!index) {
+            Update.begin(UPDATE_SIZE_UNKNOWN);
+        }
+        Update.write(data, len);
+        if (final) {
+            Update.end(true);
+        } });
+}
 void initWebserver() {
     ws.onEvent(onWsEvent);
     server.addHandler(&ws);
     server.serveStatic("/", LittleFS, "/").setDefaultFile("index.html");
     server.begin();
+    setupOTA(server);
     Serial.println("WebServer + WebSocket started");
 }

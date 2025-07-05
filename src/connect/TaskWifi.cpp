@@ -5,7 +5,9 @@ constexpr char AP_PASSWORD[] = "87654321";
 
 String ssid = "";
 String password = "";
-TaskHandle_t TaskLedBlinkHandle = NULL;
+TaskHandle_t Task_Led_Indicate_NO_WIFI_Handle = NULL;
+TaskHandle_t Task_Led_Indicate_NO_INTERNET_Handle = NULL;
+
 bool loadWiFiFromFS() {
     if (!LittleFS.begin()) {
         Serial.println("Failed to mount LittleFS");
@@ -38,21 +40,11 @@ void setup_AP() {
     Serial.print("AP IP address: ");
     Serial.println(WiFi.softAPIP());
 }
+
 void setup_STA() {
-    Serial.println("Connecting to AP ...");
+    Serial.println("Connecting to WiFi ...");
     if (loadWiFiFromFS()) {
         WiFi.begin(ssid, password);
-    }
-    if (TaskLedBlinkHandle == NULL) {
-        xTaskCreate(TaskLedBlink, "TaskLedBlink", 2048, NULL, 1, &TaskLedBlinkHandle);
-    }
-    while (WiFi.status() != WL_CONNECTED) {
-        delay(500);
-        Serial.print(".");
-    }
-    if (TaskLedBlinkHandle != NULL) {
-        vTaskDelete(TaskLedBlinkHandle);
-        TaskLedBlinkHandle = NULL;
     }
     if (WiFi.status() == WL_CONNECTED) {
         Serial.println("Connected to AP");
@@ -61,16 +53,65 @@ void setup_STA() {
         Serial.println(WiFi.localIP());
     }
 }
+
 void initWiFi() {
-    WiFi.mode(WIFI_AP_STA);
-    setup_AP();
+    pinMode(BOOT_BUTTON, INPUT_PULLUP);
+    pinMode(LED_BUILTIN, OUTPUT);
+    WiFi.mode(WIFI_STA);
     setup_STA();
 }
-bool Wifi_reconnect() {
+void Wifi_reconnect() {
     const wl_status_t status = WiFi.status();
-    if (status == WL_CONNECTED) {
-        return true;
+    // hold time out 3s -> off sta mode on ap mode
+    if (digitalRead(BOOT_BUTTON) == 0) {
+        uint32_t timepress = millis();
+        while (digitalRead(BOOT_BUTTON) == 0) {
+            if (millis() - timepress >= 3000) {
+                Serial.println("Vào chế độ cấu hình AP");
+                WiFi.disconnect(true);
+                WiFi.mode(WIFI_AP);
+                setup_AP();
+                initWebserver();  // mở websocket để user vào config
+                return;
+            }
+            delay(10);
+        }
     }
-    setup_STA();
-    return true;
+    // ---------- NO WIFI
+    if (status != WL_CONNECTED) {
+        Serial.println("NO WIFI");
+        if (Task_Led_Indicate_NO_WIFI_Handle == NULL) {
+            xTaskCreate(
+                Led_Indicate_NO_WIFI,
+                "Led_Indicate_NO_WIFI",
+                2048,
+                NULL,
+                1,
+                &Task_Led_Indicate_NO_WIFI_Handle);
+        }
+        setup_STA();
+    } else {
+        if (Task_Led_Indicate_NO_WIFI_Handle != NULL) {
+            vTaskDelete(Task_Led_Indicate_NO_WIFI_Handle);
+            Task_Led_Indicate_NO_WIFI_Handle = NULL;
+        }
+    }
+    // ------- STILL WIFI BUT NO INTERNET
+    if (status == WL_CONNECTED && !client.connected()) {
+        Serial.println("NO INTERNET");
+        if (Task_Led_Indicate_NO_INTERNET_Handle == NULL) {
+            xTaskCreate(
+                Led_Indicate_NO_INTERNET,
+                "Led_Indicate_NO_INTERNET",
+                2048,
+                NULL,
+                1,
+                &Task_Led_Indicate_NO_INTERNET_Handle);
+        }
+    } else {
+        if (Task_Led_Indicate_NO_INTERNET_Handle != NULL) {
+            vTaskDelete(Task_Led_Indicate_NO_INTERNET_Handle);
+            Task_Led_Indicate_NO_INTERNET_Handle = NULL;
+        }
+    }
 }

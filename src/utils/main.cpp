@@ -1,4 +1,3 @@
-
 #include "globals.h"
 
 void setup() {
@@ -6,20 +5,11 @@ void setup() {
     Serial.println("Hello user");
     LittleFS.begin();
     initWiFi();
-    initWebserver();
     initMQTT();
-    initDHT20();
-    initLight();
-    initSoil();
-    initDistance();
-    initFan();
-    initRelay();
-    initLed();
-    initLCD1602();
-    initFSM();
 }
 
 void loop() {
     Wifi_reconnect();
     reconnectMQTT();
+    delay(500);
 }
