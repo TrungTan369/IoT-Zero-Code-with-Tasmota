@@ -214,6 +214,24 @@
             color: #ffe082;
         }
 
+        .spinner {
+            display: inline-block;
+            width: 24px;
+            height: 24px;
+            border: 3px solid rgba(0, 0, 0, 0.1);
+            border-left-color: #09f;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            vertical-align: middle;
+            margin-left: 10px;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
         #otaForm button {
             padding: 12px 0;
             width: 80%;
@@ -235,37 +253,13 @@
             background: linear-gradient(90deg, #005b99 60%, #007acc 100%);
             box-shadow: 0 4px 16px rgba(0, 0, 0, 0.13);
         }
-
-        #otaProgressBar {
-            width: 80%;
-            height: 18px;
-            background: #eee;
-            border-radius: 9px;
-            margin: 16px auto;
-            display: none;
-            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.07);
-            overflow: hidden;
-        }
-
-        #otaProgress {
-            height: 100%;
-            width: 0%;
-            background: linear-gradient(90deg, #007acc 60%, #005b99 100%);
-            border-radius: 9px;
-            text-align: center;
-            color: white;
-            font-size: 13px;
-            line-height: 18px;
-            transition: width 0.3s;
-            font-weight: bold;
-        }
     </style>
 </head>
 
 <body>
     <div class="sidebar">
         <h2>ESP32</h2>
-        <button class="active" onclick="showPage('dashboard')">Dashboard</button>
+        <button class="active" onclick="showPage('dashboard', event)">Dashboard</button>
         <button onclick="showPage('wifi')">Cấu hình Wi-Fi</button>
         <button onclick="showPage('ota')">Nạp Firmware</button>
     </div>
@@ -392,11 +386,53 @@
             const json = JSON.stringify({ ssid, password: pwd });
             if (ws && ws.readyState === 1) {
                 ws.send("wifi:" + json);
-                document.getElementById("wifiMsg").innerText = "Đang cập nhật Wi-Fi...";
+                document.getElementById("wifiMsg").innerHTML =
+                    'Đang cập nhật Wi-Fi... <span class="spinner"></span>';
+                setTimeout(() => {
+                    location.reload();
+                }, 3000);
             }
         }
+        document.getElementById('otaForm').onsubmit = function (e) {
+            e.preventDefault();
+            const fileInput = document.getElementById('firmwareFile');
+            const file = fileInput.files[0];
+            if (!file) return;
 
-        function showPage(page) {
+            const xhr = new XMLHttpRequest();
+            xhr.open("POST", "/update", true);
+
+            // Hiển thị thanh tiến độ
+            document.getElementById('otaProgressBar').style.display = "block";
+            document.getElementById('otaProgress').style.width = "0%";
+            document.getElementById('otaProgress').innerText = "0%";
+            document.getElementById('otaMsg').innerText = "Đang nạp firmware, vui lòng chờ...";
+
+            xhr.upload.onprogress = function (evt) {
+                if (evt.lengthComputable) {
+                    const percent = Math.round((evt.loaded / evt.total) * 100);
+                    document.getElementById('otaProgress').style.width = percent + "%";
+                    document.getElementById('otaProgress').innerText = percent + "%";
+                }
+            };
+
+            xhr.onload = function () {
+                if (xhr.status === 200) {
+                    document.getElementById('otaMsg').innerText = "Nạp firmware thành công! Thiết bị sẽ tự khởi động lại.";
+                } else {
+                    document.getElementById('otaMsg').innerText = "Nạp firmware thất bại!";
+                }
+                setTimeout(() => {
+                    document.getElementById('otaProgressBar').style.display = "none";
+                    document.getElementById('otaProgress').style.width = "0%";
+                }, 3000);
+            };
+
+            const formData = new FormData();
+            formData.append("firmware", file);
+            xhr.send(formData);
+        };
+        function showPage(page, event) {
             document.getElementById('dashboardPage').style.display = (page === 'dashboard') ? 'block' : 'none';
             document.getElementById('wifiPage').style.display = (page === 'wifi') ? 'block' : 'none';
             document.getElementById('otaPage').style.display = (page === 'ota') ? 'block' : 'none';

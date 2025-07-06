@@ -36,10 +36,6 @@ void InitMQTT() {
         Serial.println("MQTT Connected");
         client.subscribe((String(IO_USERNAME) + "/feeds/feed_2").c_str());
         client.subscribe((String(IO_USERNAME) + "/feeds/feed_3").c_str());
-
-        String data = "hello";
-        publishData("feed_100", data);
-        Serial.println("Start");
     } else {
         Serial.print("MQTT connection failed, rc=");
         Serial.println(client.state());
