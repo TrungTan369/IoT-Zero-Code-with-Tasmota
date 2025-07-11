@@ -5,8 +5,6 @@ uint8_t soil;
 void TaskSoil(void *pvParameters) {
     while (1) {
         soil = (analogRead(soil_pin) / 4095.0) * 100;
-        Serial.print("SOIL: ");
-        Serial.println(soil);
         vTaskDelay(pdMS_TO_TICKS(5000));
     }
 }

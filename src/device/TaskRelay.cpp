@@ -2,11 +2,9 @@
 
 void TaskRelay(void *pvParameters) {
     while (1) {
-        digitalWrite(relay_pin, 1); 
-        Serial.println("Relay on");
+        digitalWrite(relay_pin, 1);
         vTaskDelay(pdMS_TO_TICKS(1000));
         digitalWrite(relay_pin, 0);
-        Serial.println("relay off");
         vTaskDelay(pdMS_TO_TICKS(1000));
     }
 }

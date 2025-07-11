@@ -49,23 +49,31 @@ void TaskLed(void *pvParameters) {
             led_color = static_cast<LED_COLOR>((led_color + 1) % 9);
     }
 }
-void TaskLedBlink(void *pvParameters) {
+
+void Led_Indicate_NO_WIFI(void *pvParameters) {
     while (1) {
         led_on();
-        vTaskDelay(pdMS_TO_TICKS(500));
+        vTaskDelay(pdMS_TO_TICKS(1000));
         led_off();
-        vTaskDelay(pdMS_TO_TICKS(500));
+        vTaskDelay(pdMS_TO_TICKS(1000));
+    }
+}
+void Led_Indicate_NO_INTERNET(void *pvParameters) {
+    while (1) {
+        led_on();
+        vTaskDelay(pdMS_TO_TICKS(250));
+        led_off();
+        vTaskDelay(pdMS_TO_TICKS(250));
     }
 }
 void initLed() {
     led_color = red;
-    pinMode(LED_BUILTIN, OUTPUT);
-    pinMode(led_pin, OUTPUT);
-    xTaskCreate(TaskLed, "TaskLed", 4096, NULL, 1, NULL);
+    pinMode(LED_ONBOARD, OUTPUT);
+    led_off();
 }
 void led_off() {
-    digitalWrite(LED_BUILTIN, 0);
+    digitalWrite(LED_ONBOARD, 0);
 }
 void led_on() {
-    digitalWrite(LED_BUILTIN, 1);
+    digitalWrite(LED_ONBOARD, 1);
 }

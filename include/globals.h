@@ -11,6 +11,7 @@
 #include <LCD_I2C.h>
 #include <LittleFS.h>
 #include <PubSubClient.h>
+#include <Update.h>
 #include <WiFi.h>
 #include <Wire.h>
 #include <stdint.h>
@@ -38,5 +39,6 @@
 #define fan_pin 10   // D7
 #define echo 21      // D10
 #define trig 18      // D8
-
+#define BOOT_BUTTON 0
+#define LED_ONBOARD 48  // D13
 #endif

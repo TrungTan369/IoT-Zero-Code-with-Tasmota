@@ -189,14 +189,79 @@
         #wifiForm button:hover {
             background: #005b99;
         }
+
+        .sidebar button {
+            background: none;
+            border: none;
+            color: white;
+            padding: 15px;
+            text-align: left;
+            width: 100%;
+            cursor: pointer;
+            font-size: 16px;
+            border-left: 5px solid transparent;
+            transition: background 0.2s, border-left 0.2s, color 0.2s;
+            outline: none;
+            border-radius: 0 20px 20px 0;
+            margin-bottom: 8px;
+            letter-spacing: 0.5px;
+        }
+
+        .sidebar button:hover,
+        .sidebar button.active {
+            background: #005b99;
+            border-left: 5px solid #fff;
+            color: #ffe082;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 24px;
+            height: 24px;
+            border: 3px solid rgba(0, 0, 0, 0.1);
+            border-left-color: #09f;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            vertical-align: middle;
+            margin-left: 10px;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        #otaForm button {
+            padding: 12px 0;
+            width: 80%;
+            margin: 18px auto 0 auto;
+            border-radius: 18px;
+            font-size: 1.1em;
+            background: linear-gradient(90deg, #007acc 60%, #005b99 100%);
+            color: white;
+            border: none;
+            cursor: pointer;
+            display: block;
+            transition: background 0.2s, box-shadow 0.2s;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.07);
+            font-weight: bold;
+            letter-spacing: 0.5px;
+        }
+
+        #otaForm button:hover {
+            background: linear-gradient(90deg, #005b99 60%, #007acc 100%);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.13);
+        }
     </style>
 </head>
 
 <body>
     <div class="sidebar">
         <h2>ESP32</h2>
-        <button class="active" onclick="showPage('dashboard')">Dashboard</button>
+        <button class="active" onclick="showPage('dashboard', event)">Dashboard</button>
         <button onclick="showPage('wifi')">Cấu hình Wi-Fi</button>
+        <button onclick="showPage('ota')">Nạp Firmware</button>
     </div>
 
     <div class="content">
@@ -261,6 +326,21 @@
             </form>
             <p id="wifiMsg"></p>
         </div>
+
+        <div id="otaPage" style="display: none;">
+            <h1>Nạp Firmware (OTA)</h1>
+            <form id="otaForm">
+                <input type="file" name="firmware" id="firmwareFile" required style="margin-bottom:16px;">
+                <button type="submit">Nạp Firmware</button>
+                <div id="otaProgressBar"
+                    style="width:80%;height:18px;background:#eee;border-radius:9px;margin:16px auto;display:none;">
+                    <div id="otaProgress"
+                        style="height:100%;width:0%;background:#007acc;border-radius:9px;text-align:center;color:white;font-size:13px;line-height:18px;">
+                    </div>
+                </div>
+            </form>
+            <p id="otaMsg"></p>
+        </div>
     </div>
 
     <script>
@@ -306,13 +386,56 @@
             const json = JSON.stringify({ ssid, password: pwd });
             if (ws && ws.readyState === 1) {
                 ws.send("wifi:" + json);
-                document.getElementById("wifiMsg").innerText = "Đang cập nhật Wi-Fi...";
+                document.getElementById("wifiMsg").innerHTML =
+                    'Đang cập nhật Wi-Fi... <span class="spinner"></span>';
+                setTimeout(() => {
+                    location.reload();
+                }, 3000);
             }
         }
+        document.getElementById('otaForm').onsubmit = function (e) {
+            e.preventDefault();
+            const fileInput = document.getElementById('firmwareFile');
+            const file = fileInput.files[0];
+            if (!file) return;
 
-        function showPage(page) {
+            const xhr = new XMLHttpRequest();
+            xhr.open("POST", "/update", true);
+
+            // Hiển thị thanh tiến độ
+            document.getElementById('otaProgressBar').style.display = "block";
+            document.getElementById('otaProgress').style.width = "0%";
+            document.getElementById('otaProgress').innerText = "0%";
+            document.getElementById('otaMsg').innerText = "Đang nạp firmware, vui lòng chờ...";
+
+            xhr.upload.onprogress = function (evt) {
+                if (evt.lengthComputable) {
+                    const percent = Math.round((evt.loaded / evt.total) * 100);
+                    document.getElementById('otaProgress').style.width = percent + "%";
+                    document.getElementById('otaProgress').innerText = percent + "%";
+                }
+            };
+
+            xhr.onload = function () {
+                if (xhr.status === 200) {
+                    document.getElementById('otaMsg').innerText = "Nạp firmware thành công! Thiết bị sẽ tự khởi động lại.";
+                } else {
+                    document.getElementById('otaMsg').innerText = "Nạp firmware thất bại!";
+                }
+                setTimeout(() => {
+                    document.getElementById('otaProgressBar').style.display = "none";
+                    document.getElementById('otaProgress').style.width = "0%";
+                }, 3000);
+            };
+
+            const formData = new FormData();
+            formData.append("firmware", file);
+            xhr.send(formData);
+        };
+        function showPage(page, event) {
             document.getElementById('dashboardPage').style.display = (page === 'dashboard') ? 'block' : 'none';
             document.getElementById('wifiPage').style.display = (page === 'wifi') ? 'block' : 'none';
+            document.getElementById('otaPage').style.display = (page === 'ota') ? 'block' : 'none';
             document.querySelectorAll('.sidebar button').forEach(btn => btn.classList.remove('active'));
             event.target.classList.add('active');
         }

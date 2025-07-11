@@ -15,8 +15,6 @@ void TaskDistance(void *pvParameters) {
         } else {
             distance = 0;
         }
-        Serial.print("DISTANCE: ");
-        Serial.println(distance);
         vTaskDelay(pdMS_TO_TICKS(3000));
     }
 }

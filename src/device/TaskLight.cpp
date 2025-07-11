@@ -5,8 +5,6 @@ uint8_t light = 0;
 void TaskLight(void *pvParameters) {
     while (1) {
         light = (analogRead(light_sensor_pin) / 4095.0) * 100;
-        Serial.print("LIGHT: ");
-        Serial.println(light);
         vTaskDelay(pdMS_TO_TICKS(5000));
     }
 }

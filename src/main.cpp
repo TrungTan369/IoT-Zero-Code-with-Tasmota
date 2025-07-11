@@ -22,4 +22,5 @@ void setup() {
 void loop() {
     Wifi_reconnect();
     reconnectMQTT();
+    delay(500);
 }
